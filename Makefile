@@ -13,9 +13,9 @@ TESTS	=	-lcriterion --coverage
 
 LIB	=		-L./lib %LIB
 
-${NAME}:	${OBJ}
+${NAME}:	$(OBJ)
 			%ALL
-			gcc -o ${NAME} ${OBJ} $(LIB) %INC
+			gcc -o $(NAME) $(OBJ) $(LIB) %INC
 
 all :		${NAME}
 
@@ -25,7 +25,7 @@ clean:
 
 
 fclean:	clean
-			rm -f ${NAME}
+			rm -f $(NAME)
 			%FCLEAN
 			rm -f *.gcno *.gcda unit_tests
 

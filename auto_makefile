@@ -49,8 +49,10 @@ def grab_lib_names():
         return []
     libs = []
     for lib in os.listdir("./lib"):
-        if (os.path.isdir(f"./lib/{lib}")):
-            libs.append(lib)
+        if (os.path.isdir(f"./lib/{lib}")) and lib != "my":
+            libs.insert(0, lib)
+    if (os.path.isdir("./lib/my")):
+         libs.append("my")
     return libs
 
 
@@ -89,6 +91,8 @@ def make_makefile(name):
     makefile = open(template_makefile, "r").read()
     src = get_files("./", ".c")
     libs = grab_lib_names()
+
+
     makefile = makefile.replace("%NAME", name)
     makefile = replace_or_delete("%SRC", makefile, "\n".join(src))
     makefile = replace_or_delete("%LIB", makefile, '-l' + " -l".join(libs))
@@ -103,20 +107,23 @@ def make_makefile(name):
         "%FCLEAN", makefile, libs_commands[2].lstrip())
     if (len(libs) > 0):
         makefile = makefile.replace("%INC", f"-I./include")
-    for lib in libs:
-        lib_makefile(lib)
-    makefile_write("./", makefile)
+
+
+
     lib_h = []
-    for lib in libs:
-        lib_h.append(f'#include "{lib}.h"')
-    # remove {lib}.h files in include folder
+    # if header for libs exist, remove them
     for file in os.listdir("./include"):
         for lib in libs:
             if file == f"{lib}.h":
                 os.remove(f"./include/{file}")
+    for lib in libs:
+        lib_h.append(f'#include "{lib}.h"')
     for file in os.listdir("./include"):
         if file.endswith(".h"):
             lib_h.append(f'#include "{file}"')
+    for lib in libs:
+        lib_makefile(lib)
+    makefile_write("./", makefile)
     header_lib = open(lib_include, "r").read()
     header_lib = header_lib.replace("%%LIB", "\n\t".join(lib_h))
     with open("include/auto.h", "w") as f:
