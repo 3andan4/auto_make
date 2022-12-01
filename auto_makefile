@@ -25,9 +25,6 @@ def header_write(name, header):
         os.remove(f"include/{name}.h")
     with open(f"include/{name}.h", "w") as f:
         f.write(header)
-    lib = open(lib_include, "r").read()
-    with open("include/lib.h", "w") as f:
-        f.write(lib)
 
 
 def get_files(directory, extension):
@@ -107,6 +104,13 @@ def make_makefile(name):
     for lib in libs:
         lib_makefile(lib)
     makefile_write("./", makefile)
+    lib_h = []
+    for lib in libs:
+        lib_h.append(f'#include "{lib}.h">')
+    header_lib = open(lib_include, "r").read()
+    header_lib = header_lib.replace("%%LIB", "\n".join(lib_h))
+    with open("include/lib.h", "w") as f:
+        f.write(header_lib)
     print(f"Work Done !\nMakefile created for the project {name}")
     print(f"Also created Makefile for the librairies {' '.join(libs)}") if len(libs) > 0 else print("No librairies found")
     return

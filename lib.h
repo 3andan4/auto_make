@@ -21,4 +21,5 @@
     #include <grp.h>
     #include <stdbool.h>
     #include <fcntl.h>
+    %%LIBS
 #endif
