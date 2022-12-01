@@ -106,9 +106,9 @@ def make_makefile(name):
     makefile_write("./", makefile)
     lib_h = []
     for lib in libs:
-        lib_h.append(f'#include "{lib}.h">')
+        lib_h.append(f'#include "{lib}.h"')
     header_lib = open(lib_include, "r").read()
-    header_lib = header_lib.replace("%%LIB", "\n".join(lib_h))
+    header_lib = header_lib.replace("%%LIB", "\n\t".join(lib_h))
     with open("include/lib.h", "w") as f:
         f.write(header_lib)
     print(f"Work Done !\nMakefile created for the project {name}")
