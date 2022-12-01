@@ -15,7 +15,7 @@ LIB	=		-L./lib %LIB
 
 ${NAME}:	${OBJ}
 			%ALL
-			gcc -o ${NAME} ${OBJ} $(LIB)
+			gcc -o ${NAME} ${OBJ} $(LIB) %INC
 
 all :		${NAME}
 

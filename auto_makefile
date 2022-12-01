@@ -101,6 +101,8 @@ def make_makefile(name):
     makefile = replace_or_delete("%CLEAN", makefile, libs_commands[1].lstrip())
     makefile = replace_or_delete(
         "%FCLEAN", makefile, libs_commands[2].lstrip())
+    if (len(libs) > 0):
+        makefile = makefile.replace("%INC", f"-I./include")
     for lib in libs:
         lib_makefile(lib)
     makefile_write("./", makefile)
