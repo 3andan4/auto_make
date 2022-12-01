@@ -109,7 +109,11 @@ def make_makefile(name):
     lib_h = []
     for lib in libs:
         lib_h.append(f'#include "{lib}.h"')
-    # if the include folder isn't empty, take every header in it and include their names in header_lib
+    # remove {lib}.h files in include folder
+    for file in os.listdir("./include"):
+        for lib in libs:
+            if file == f"{lib}.h":
+                os.remove(f"./include/{file}")
     for file in os.listdir("./include"):
         if file.endswith(".h"):
             lib_h.append(f'#include "{file}"')
