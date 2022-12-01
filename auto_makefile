@@ -8,7 +8,7 @@ script_path = os.path.dirname(os.path.realpath(__file__))
 template_makefile = f"{script_path}/Makefile"
 template_libmakefile = f"{script_path}/lib/my/Makefile"
 template_header = f"{script_path}/header.h"
-lib_include = f"{script_path}/lib.h"
+lib_include = f"{script_path}/auto.h"
 
 
 def makefile_write(path, makefile):
@@ -109,9 +109,13 @@ def make_makefile(name):
     lib_h = []
     for lib in libs:
         lib_h.append(f'#include "{lib}.h"')
+    # if the include folder isn't empty, take every header in it and include their names in header_lib
+    for file in os.listdir("./include"):
+        if file.endswith(".h"):
+            lib_h.append(f'#include "{file}"')
     header_lib = open(lib_include, "r").read()
     header_lib = header_lib.replace("%%LIB", "\n\t".join(lib_h))
-    with open("include/lib.h", "w") as f:
+    with open("include/auto.h", "w") as f:
         f.write(header_lib)
     print(f"Work Done !\nMakefile created for the project {name}")
     print(f"Also created Makefile for the librairies {' '.join(libs)}") if len(libs) > 0 else print("No librairies found")
