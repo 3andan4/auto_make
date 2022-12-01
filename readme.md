@@ -15,7 +15,7 @@ sudo ln -s ~/.auto_make/auto_makefile /usr/bin/Make_auto
 
 > **Note**: The Makefile will be created in the current directory and all libraries will be included in make instructions.
 
-> **Note**: A mandatory lib.h file will be created in the include folder.
+> **Note**: A mandatory auto.h file will be created in the include folder.
 
 > **Note**: Include folder will be created if it doesn't exist.
 
