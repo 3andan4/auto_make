@@ -1,0 +1,126 @@
+#!/usr/bin/python3
+
+import os
+import sys
+from get_funcs import find_functions
+# Get script path
+script_path = os.path.dirname(os.path.realpath(__file__))
+template_makefile = f"{script_path}/Makefile"
+template_libmakefile = f"{script_path}/lib/my/Makefile"
+template_header = f"{script_path}/header.h"
+lib_include = f"{script_path}/lib.h"
+
+
+def makefile_write(path, makefile):
+    new_makename = "Makefile"
+    slash = "/" if path[-1] != "/" else ""
+    if (os.path.exists(f"{path}{slash}{new_makename}")):
+        os.remove(f"{path}{slash}{new_makename}")
+    with open(f"{path}{slash}{new_makename}", "w") as f:
+        f.write(makefile)
+
+
+def header_write(name, header):
+    if (os.path.exists(f"include/{name}.h")):
+        os.remove(f"include/{name}.h")
+    with open(f"include/{name}.h", "w") as f:
+        f.write(header)
+    lib = open(lib_include, "r").read()
+    with open("include/lib.h", "w") as f:
+        f.write(lib)
+
+
+def get_files(directory, extension):
+    files = []
+    for file in os.listdir(directory):
+        if file.endswith(extension):
+            files.append(file)
+    return files
+
+
+def get_subdirs(directory):
+    subdirs = []
+    for file in os.listdir(directory):
+        if os.path.isdir(file):
+            subdirs.append(file)
+    return subdirs
+
+
+def grab_lib_names():
+    if (not os.path.exists("./lib")):
+        print("Will create a Makefile without any librairies")
+        return []
+    libs = []
+    for lib in os.listdir("./lib"):
+        if (os.path.isdir(f"./lib/{lib}")):
+            libs.append(lib)
+    return libs
+
+
+def replace_or_delete(flag: str, makefile: str, replace: str):
+    if (len(replace) > 0):
+        makefile = makefile.replace(flag, replace)
+    else:
+        makefile = makefile.replace(flag, "\r")
+    return makefile
+
+
+def header_build(path, name):
+    datas = find_functions(path)
+    header = open(template_header, "r").read()
+    header = header.replace("%HEADER", name.upper())
+    header = header.replace("%%FUNCTIONS", "\n\t".join(datas))
+    header_write(name, header)
+
+
+def lib_makefile(lib_name):
+    path: str = f"./lib/{lib_name}/"
+    lib = []
+    for file in os.listdir(path):
+        if file.endswith(".c"):
+            lib.append(file)
+    makefile = open(template_libmakefile, "r").read()
+    makefile = makefile.replace("%NAME", lib_name)
+    makefile = makefile.replace("%LIB", "\\\n\t\t".join(lib))
+    makefile_write(path, makefile)
+    print(f"Creating header for {lib_name}")
+    header_build(path, lib_name)
+    return
+
+
+def make_makefile(name):
+    makefile = open(template_makefile, "r").read()
+    src = get_files("./", ".c")
+    libs = grab_lib_names()
+    makefile = makefile.replace("%NAME", name)
+    makefile = replace_or_delete("%SRC", makefile, "\n".join(src))
+    makefile = replace_or_delete("%LIB", makefile, '-l' + " -l".join(libs))
+    libs_commands: list = ["", "", ""]
+    for lib in libs:
+        libs_commands[0] += f"\tmake -C lib/{lib}/\n\t\t"
+        libs_commands[1] += f"\tmake clean -C lib/{lib}/\n\t\t"
+        libs_commands[2] += f"\tmake fclean -C lib/{lib}/\n\t\t"
+    makefile = replace_or_delete("%ALL", makefile, libs_commands[0].lstrip())
+    makefile = replace_or_delete("%CLEAN", makefile, libs_commands[1].lstrip())
+    makefile = replace_or_delete(
+        "%FCLEAN", makefile, libs_commands[2].lstrip())
+    for lib in libs:
+        lib_makefile(lib)
+    makefile_write("./", makefile)
+    print(f"Work Done !\nMakefile created for the project {name}")
+    print(f"Also created Makefile for the librairies {' '.join(libs)}") if len(libs) > 0 else print("No librairies found")
+    return
+
+
+if __name__ == '__main__':
+    if (not os.path.exists("./include")):
+        os.mkdir("./include")
+    name = ''
+    if len(sys.argv) > 1:
+        name = sys.argv[1]
+    if name == '':
+        print("No project name given\n Creating name from directory name")
+        name = os.getcwd().split('/')[-1]
+        name = name[1:] if name[0] == '.' else name
+        print(f"Project name: {name}")
+    make_makefile(name)
