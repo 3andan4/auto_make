@@ -6,7 +6,7 @@ from get_funcs import find_functions
 # Get script path
 script_path = os.path.dirname(os.path.realpath(__file__))
 template_makefile = f"{script_path}/Makefile"
-template_libmakefile = f"{script_path}/lib/my/Makefile"
+template_lib_make_file = f"{script_path}/lib/my/Makefile"
 template_header = f"{script_path}/header.h"
 lib_include = f"{script_path}/auto.h"
 
@@ -14,16 +14,16 @@ lib_include = f"{script_path}/auto.h"
 def makefile_write(path, makefile):
     new_makename = "Makefile"
     slash = "/" if path[-1] != "/" else ""
-    if (os.path.exists(f"{path}{slash}{new_makename}")):
+    if os.path.exists(f"{path}{slash}{new_makename}"):
         os.remove(f"{path}{slash}{new_makename}")
     with open(f"{path}{slash}{new_makename}", "w") as f:
         f.write(makefile)
 
 
-def header_write(name, header):
-    if (os.path.exists(f"include/{name}.h")):
-        os.remove(f"include/{name}.h")
-    with open(f"include/{name}.h", "w") as f:
+def header_write(f_name, header):
+    if os.path.exists(f"include/{f_name}.h"):
+        os.remove(f"include/{f_name}.h")
+    with open(f"include/{f_name}.h", "w") as f:
         f.write(header)
 
 
@@ -35,41 +35,41 @@ def get_files(directory, extension):
     return files
 
 
-def get_subdirs(directory):
-    subdirs = []
+def get_sub_dirs(directory):
+    sub_dirs = []
     for file in os.listdir(directory):
         if os.path.isdir(file):
-            subdirs.append(file)
-    return subdirs
+            sub_dirs.append(file)
+    return sub_dirs
 
 
 def grab_lib_names():
-    if (not os.path.exists("./lib")):
-        print("Will create a Makefile without any librairies")
+    if not os.path.exists("./lib"):
+        print("Will create a Makefile without any libraries")
         return []
     libs = []
     for lib in os.listdir("./lib"):
         if (os.path.isdir(f"./lib/{lib}")) and lib != "my":
             libs.insert(0, lib)
-    if (os.path.isdir("./lib/my")):
-         libs.append("my")
+    if os.path.isdir("./lib/my"):
+        libs.append("my")
     return libs
 
 
 def replace_or_delete(flag: str, makefile: str, replace: str):
-    if (len(replace) > 0):
+    if len(replace) > 0:
         makefile = makefile.replace(flag, replace)
     else:
         makefile = makefile.replace(flag, "\r")
     return makefile
 
 
-def header_build(path, name):
+def header_build(path, f_name):
     datas = find_functions(path)
     header = open(template_header, "r").read()
-    header = header.replace("%HEADER", name.upper())
+    header = header.replace("%HEADER", f_name.upper())
     header = header.replace("%%FUNCTIONS", "\n\t".join(datas))
-    header_write(name, header)
+    header_write(f_name, header)
 
 
 def lib_makefile(lib_name):
@@ -78,7 +78,7 @@ def lib_makefile(lib_name):
     for file in os.listdir(path):
         if file.endswith(".c"):
             lib.append(file)
-    makefile = open(template_libmakefile, "r").read()
+    makefile = open(template_lib_make_file, "r").read()
     makefile = makefile.replace("%NAME", lib_name)
     makefile = makefile.replace("%LIB", "\\\n\t\t".join(lib))
     makefile_write(path, makefile)
@@ -87,54 +87,64 @@ def lib_makefile(lib_name):
     return
 
 
-def make_makefile(name):
+def make_makefile(f_name):
     makefile = open(template_makefile, "r").read()
     src = get_files("./", ".c")
     libs = grab_lib_names()
 
-
-    makefile = makefile.replace("%NAME", name)
+    makefile = makefile.replace("%NAME", f_name)
     makefile = replace_or_delete("%SRC", makefile, "\n".join(src))
-    makefile = replace_or_delete("%LIB", makefile, '-l' + " -l".join(libs))
+    replace_lib = "" if len(libs) == 0 else '-l' + " -l".join(libs)
+    makefile = replace_or_delete("%LIB", makefile, replace_lib)
+
     libs_commands: list = ["", "", ""]
+
     for lib in libs:
         libs_commands[0] += f"\tmake -C lib/{lib}/\n\t\t"
         libs_commands[1] += f"\tmake clean -C lib/{lib}/\n\t\t"
         libs_commands[2] += f"\tmake fclean -C lib/{lib}/\n\t\t"
+
     makefile = replace_or_delete("%ALL", makefile, libs_commands[0].lstrip())
     makefile = replace_or_delete("%CLEAN", makefile, libs_commands[1].lstrip())
     makefile = replace_or_delete(
         "%FCLEAN", makefile, libs_commands[2].lstrip())
-    if (len(libs) > 0):
+
+    if len(libs) > 0:
         makefile = makefile.replace("%INC", f"-I./include")
-
-
-
+    else:
+        makefile = makefile.replace("%INC", "")
     lib_h = []
-    # if header for libs exist, remove them
+
     for file in os.listdir("./include"):
         for lib in libs:
             if file == f"{lib}.h":
                 os.remove(f"./include/{file}")
+
     for lib in libs:
         lib_h.append(f'#include "{lib}.h"')
+
     for file in os.listdir("./include"):
         if file.endswith(".h"):
             lib_h.append(f'#include "{file}"')
+
     for lib in libs:
         lib_makefile(lib)
+
     makefile_write("./", makefile)
     header_lib = open(lib_include, "r").read()
     header_lib = header_lib.replace("%%LIB", "\n\t".join(lib_h))
+
     with open("include/auto.h", "w") as f:
         f.write(header_lib)
-    print(f"Work Done !\nMakefile created for the project {name}")
-    print(f"Also created Makefile for the librairies {' '.join(libs)}") if len(libs) > 0 else print("No librairies found")
+
+    print(f"Work Done !\nMakefile created for the project {f_name}")
+    print(f"Also created Makefile for the libraries {' '.join(libs)}") if len(libs) > 0 else \
+        print("No libraries found")
     return
 
 
 if __name__ == '__main__':
-    if (not os.path.exists("./include")):
+    if not os.path.exists("./include"):
         os.mkdir("./include")
     name = ''
     if len(sys.argv) > 1:
